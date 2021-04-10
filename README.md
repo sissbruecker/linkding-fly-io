@@ -1,12 +1,14 @@
 # linkding fly.io Setup
 
-This repository provides an application setup for running a linkding application on [fly.io](https://fly.io).
+This repository provides an application setup for running [linkding](https://github.com/sissbruecker/linkding) on [fly.io](https://fly.io).
 
-fly.io is a developer-centric hosting service for Docker images. fly.io is straightforward to use and has reasonable pricing. For running a personal linkding instance you should be good with the resources provided by the free tier, except for storage which is needed for persisting your linkding database through application restarts. The minimum amount of storage you can buy is 10GB, which is currently 1.50$ / month according to their [pricing](https://fly.io/docs/about/pricing/).
+fly.io is a developer-centric hosting service for Docker containers. fly.io is straightforward to use and has reasonable pricing. For running a personal linkding instance you should be good with the resources provided by the free tier, except for storage which is needed for persisting your linkding database through application restarts. The minimum amount of storage you can buy is 10GB, which is currently 1.50$ / month according to their [pricing](https://fly.io/docs/about/pricing/).
 
-This setup is currently intended for technical audiences only. You need to able use the command line and setup developer specific tools. No support will be provided in this repo, other than issues with the setup itself (bugfixes + improvements).
+**DISCLAIMER: fly.io is a commercial service.** You'll need a credit card in order to use their service. I'll take no responsibility for, and make no guarantees about the amount that you will be billed for. Check their [pricing page](https://fly.io/docs/about/pricing) for details. Make sure to check regularly on your applications actual resource usage. 
 
-**NOTE that you need a credit card** in order to use their service, in case your applications exceeds the resources provided in the free tier. Check their [pricing page](https://fly.io/docs/about/pricing) for details. Make sure to check regularly on your applications actual resource usage.
+This setup is currently intended for technical audiences only. You need to able use the command line and developer specific tools. No support will be provided in this repo, other than issues with the setup itself (bugfixes + improvements).
+
+
 
 ## Prerequisites
 The following software needs to be available on your system to use this setup:
@@ -19,11 +21,11 @@ fly.io provides a command line tool for interacting with their service. See here
 
 ## Signup or login
 
-Run the following command to sign up for a free account:
+Run the following command to sign up for an account:
 ```
 flyctl auth signup
 ```
-*NOTE: This will require a valid credit card in case your application will exceed the free plan. Check their [pricing page](https://fly.io/docs/about/pricing) for details.*
+*NOTE: This will require a valid credit card. Check their [pricing page](https://fly.io/docs/about/pricing) for details on billing.*
 
 Alternatively if you already have an existing fly.io account then login with:
 ```
@@ -63,7 +65,7 @@ To create a volume, run:
 fly volumes create linkding_data --region=<region> --size 10
 ```
 This will create a volume with a size of 10GB, which is currently the minimum that you can use.
-Note that the volume needs to be created  in a specific region. You should enter the same region that you picked when running `flytcl launch`. You can see a list of all regions [here](https://fly.io/docs/reference/regions/).
+Note that the volume needs to be created  in a specific `<region>`. I would recommend to use the same region that you picked when running `flytcl launch`. You can see a list of all regions [here](https://fly.io/docs/reference/regions/).
 
 ## Application configuration
 
@@ -77,8 +79,8 @@ kill_timeout = 5
   protocol = "tcp"
 
   [services.concurrency]
-    hard_limit = 1000
-    soft_limit = 1000
+    hard_limit = 30
+    soft_limit = 25
 
   [[services.ports]]
     handlers = ["http"]
@@ -99,7 +101,7 @@ kill_timeout = 5
 source="linkding_data"
 destination="/etc/linkding/data"
 ```
-The concurrency is intentionally set to a high number to prevent unexpected spawning of additional instances which might result in additional costs.
+**NOTE** You might want to increase the limits for concurrency to prevent unexpected spawning of additional instances which might result in additional costs. A single instance should be more than enough for a single concurrent user.
 
 ## Run the application
 
@@ -109,7 +111,7 @@ flyctl deploy
 ```
 
 This will:
-- build a custom Docker image based on the latest linkding image
+- build a custom Docker image for your application, based on the latest linkding image
 - upload it to the fly.io container registry
 - create a release for your application
 
@@ -121,14 +123,33 @@ Alternatively you can also view your running app through the fly.io web dashboar
 
 If you open the URL for your deployed application in the browser, you should see the linkding login view. You can login using the credentials that you have set in the previous step. If you need to change the password open the linkding settings and click on the Admin link to open the admin application. You can change your password here or create additional users if needed.
 
+## Stop the application
+
+If you want to stop the application then run:
+```
+flyctl suspend <app-name>
+```
+Where `<app-name>` is the name that was generated for your fly.io application (see `fly.toml`)
+
 ## Delete the application
 
 If you don't want to use the service anymore you can delete the application by running:
 ```
 flyctl destroy <app-name>
 ```
-Where `<app-name>` is the name that was generated for your fly.io application (see `fly.toml`). This will delete your app, not undeploy it. If you want to stop deployments check the [suspend](https://fly.io/docs/flyctl/apps-suspend/#welcome-message) command.
+Where `<app-name>` is the name that was generated for your fly.io application (see `fly.toml`). Note that this will delete your app **forever**.
+
+You'll also need to remove the volume which is the actual resource that your are billed for. List all volumes to get the ID of your volume:
+```
+flyctl volumes list
+```
+
+Then run the following command to delete the volume:
+```
+flyctl volumes delete <volume-id>
+```
+Where `<volume-id>` is the ID of the volume that you got from `flyctl volumes list`.
 
 ## Custom domain name
 
-By default your application will be deployed under a generic `<app-name>.fly.dev` domain. If you want to use a custom domain you can register a custom domain with any domain registrar and then set up a CNAME that points to your fly.dev domain. fly.io has more information in their docs on how to do that: https://fly.io/docs/getting-started/working-with-fly-apps/#fly-and-custom-domains
+By default your application will be deployed under a generic `<app-name>.fly.dev` domain. If you want to use a custom domain you can register a custom domain with any domain registrar and then set up a CNAME that points to your fly.dev domain. fly.io has more information in their docs on how to do that: https://fly.io/docs/getting-started/working-with-fly-apps/#fly-and-custom-domains. They also support generating certificates through LetsEncrypt.
