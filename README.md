@@ -13,7 +13,6 @@ The following software needs to be available on your system to use this setup:
 - Git
 - Docker
 
-
 ## Install fly.io CLI
 
 fly.io provides a command line tool for interacting with their service. See here for installation instructions: https://fly.io/docs/getting-started/installing-flyctl/
@@ -121,6 +120,14 @@ flyctl info
 Alternatively you can also view your running app through the fly.io web dashboard: https://fly.io/apps/. In general check their docs on how to interact with your application: https://fly.io/docs/.
 
 If you open the URL for your deployed application in the browser, you should see the linkding login view. You can login using the credentials that you have set in the previous step. If you need to change the password open the linkding settings and click on the Admin link to open the admin application. You can change your password here or create additional users if needed.
+
+## Delete the application
+
+If you don't want to use the service anymore you can delete the application by running:
+```
+flyctl destroy <app-name>
+```
+Where `<app-name>` is the name that was generated for your fly.io application (see `fly.toml`). This will delete your app, not undeploy it. If you want to stop deployments check the [suspend](https://fly.io/docs/flyctl/apps-suspend/#welcome-message) command.
 
 ## Custom domain name
 
