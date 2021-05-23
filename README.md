@@ -95,7 +95,7 @@ kill_timeout = 5
     interval = "15s"
     port = "9090"
     restart_limit = 6
-    timeout = "2s"
+    timeout = "10s"
 
 [mounts]
 source="linkding_data"
